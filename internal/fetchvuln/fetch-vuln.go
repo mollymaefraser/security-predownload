@@ -17,8 +17,21 @@ func CheckVulnerabilities(packageName string) (int, error) {
 	defer resp.Body.Close()
 
 	var result map[string]interface{}
-	json.NewDecoder(resp.Body).Decode(&result)
-	vulnCount := len(result["vulns"].([]interface{}))
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	if err != nil {
+		return 0, err
+	}
 
-	return vulnCount, nil
+	// Ensure "vulns" exists before type assertion
+	vulns, ok := result["vulns"]
+	if !ok || vulns == nil {
+		return 0, nil
+	}
+
+	vulnList, ok := vulns.([]interface{})
+	if !ok {
+		return 0, nil
+	}
+
+	return len(vulnList), nil
 }
