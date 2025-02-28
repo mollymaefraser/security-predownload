@@ -14,11 +14,12 @@ func main() {
 		Short: "Assess risk before downloading a package",
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) < 1 {
-				fmt.Println("Usage: risk-check <package-name>")
+				fmt.Println("Usage: risk-check <owner> <package-name>")
 				os.Exit(1)
 			}
-			packageName := args[0]
-			assessrisk.AssessRisk(packageName)
+			owner := args[1]
+			packageName := args[2]
+			assessrisk.AssessRisk(owner, packageName)
 		},
 	}
 

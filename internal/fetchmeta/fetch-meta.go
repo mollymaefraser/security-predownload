@@ -3,26 +3,33 @@ package fetchmeta
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
-
 	"risk-check/internal/types"
 )
 
-const githubAPI = "https://api.github.com/repos/"
-
+// GetGitHubRepoData fetches repository data from GitHub
 func GetGitHubRepoData(owner, repo string) (*types.GitHubRepo, error) {
-	url := fmt.Sprintf("%s%s/%s", githubAPI, owner, repo)
+	url := fmt.Sprintf("https://api.github.com/repos/%s/%s", owner, repo)
+	fmt.Println(url)
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	var repoData types.GitHubRepo
-	err = json.NewDecoder(resp.Body).Decode(&repoData)
+	// Read response body
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 
-	return &repoData, nil
+	// Decode into struct
+	var data types.GitHubRepo
+	err = json.Unmarshal(body, &data)
+	if err != nil {
+		return nil, err
+	}
+
+	return &data, nil
 }

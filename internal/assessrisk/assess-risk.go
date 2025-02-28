@@ -3,28 +3,46 @@ package assessrisk
 import (
 	"fmt"
 	"risk-check/internal/fetchmeta"
-	"risk-check/internal/fetchvuln"
 )
 
-func AssessRisk(packageName string) {
-	repoData, err := fetchmeta.GetGitHubRepoData("owner", packageName)
+// AssessRisk evaluates the risk score and provides reasons
+func AssessRisk(owner, packageName string) {
+	fmt.Printf("Assessing risk for package: %s\n\n", packageName)
+
+	// Try to fetch the GitHub data
+	data, err := fetchmeta.GetGitHubRepoData(owner, packageName)
 	if err != nil {
-		fmt.Println("There was an error")
+		fmt.Println("⚠️ Error searching GitHub:", err)
+		return
 	}
 
-	vulnCount, err := fetchvuln.CheckVulnerabilities(packageName)
-	if err != nil {
-		fmt.Println("There was an error")
-	}
-
+	// Continue with the risk assessment
+	vulnCount := 0 // Simulate vulnerability check (you can integrate it as needed)
 	score := 100
+	reasons := []string{}
 
-	if repoData.StargazersCount < 50 {
-		score -= 20
-	}
+	// Deduct points for vulnerabilities
 	if vulnCount > 0 {
-		score -= vulnCount * 10
+		deduction := vulnCount * 10
+		reasons = append(reasons, fmt.Sprintf("-%d: Found %d vulnerabilities", deduction, vulnCount))
+		score -= deduction
 	}
 
-	fmt.Printf("Risk Score for %s: %d/100\n", packageName, score)
+	// Deduct points for popularity (stars)
+	if data.StargazersCount < 100 {
+		deduction := 20
+		reasons = append(reasons, fmt.Sprintf("-%d: Low popularity (%d stars)", deduction, data.StargazersCount))
+		score -= deduction
+	}
+
+	if score < 100 {
+		// Print risk breakdown
+		fmt.Println("📊 **Risk Breakdown**")
+		for _, reason := range reasons {
+			fmt.Println(reason)
+		}
+	}
+
+	// Print final risk score
+	fmt.Printf("\n🔎 Final Risk Score for %s: **%d/100**\n", packageName, score)
 }
