@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"risk-check/internal/assessrisk"
 
 	"github.com/spf13/cobra"
 )
@@ -17,7 +18,7 @@ func main() {
 				os.Exit(1)
 			}
 			packageName := args[0]
-			assessrisk.assessRisk(packageName)
+			assessrisk.AssessRisk(packageName)
 		},
 	}
 

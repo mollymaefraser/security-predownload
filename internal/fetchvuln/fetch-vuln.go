@@ -8,7 +8,7 @@ import (
 
 const osvAPI = "https://api.osv.dev/v1/query"
 
-func checkVulnerabilities(packageName string) (int, error) {
+func CheckVulnerabilities(packageName string) (int, error) {
 	data := `{"package": {"name": "` + packageName + `"}}`
 	resp, err := http.Post(osvAPI, "application/json", strings.NewReader(data))
 	if err != nil {

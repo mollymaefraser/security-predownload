@@ -2,21 +2,27 @@ package assessrisk
 
 import (
 	"fmt"
-	"errors"
-	"github.com/mollymaefraser/security-predownload/internal/fetchmeta"
-	"github.com/mollymaefraser/security-predownload/internal/fetchvuln"
+	"risk-check/internal/fetchmeta"
+	"risk-check/internal/fetchvuln"
 )
 
-func assessRisk(packageName string) {
-	repoData := fetchmeta.getGitHubRepoData("owner", packageName)
-	vulnCount := fetchvuln.checkVulnerabilities(packageName)
-
+func AssessRisk(packageName string) {
+	repoData, err := fetchmeta.GetGitHubRepoData("owner", packageName)
+	if err != nil {
+		fmt.Println("There was an error")
 	}
-	
-	if(repoData.StargazersCount < 50) {
+
+	vulnCount, err := fetchvuln.CheckVulnerabilities(packageName)
+	if err != nil {
+		fmt.Println("There was an error")
+	}
+
+	score := 100
+
+	if repoData.StargazersCount < 50 {
 		score -= 20
 	}
-	if(vulnCount > 0) {
+	if vulnCount > 0 {
 		score -= vulnCount * 10
 	}
 

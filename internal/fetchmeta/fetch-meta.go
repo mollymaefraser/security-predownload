@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/mollymaefraser/security-predownload/internal/types"
+	"risk-check/internal/types"
 )
 
 const githubAPI = "https://api.github.com/repos/"
 
-func getGitHubRepoData(owner, repo string) (*types.GitHubRepo, error) {
+func GetGitHubRepoData(owner, repo string) (*types.GitHubRepo, error) {
 	url := fmt.Sprintf("%s%s/%s", githubAPI, owner, repo)
 	resp, err := http.Get(url)
 	if err != nil {
