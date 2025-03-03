@@ -1,0 +1,26 @@
+name: Go
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Create SBOM
+      uses: anchore/sbom-action@v0
+      with:
+        path: ./internal
+        format: spdx-json
+        output-file: "${{ github.event.repository.name }}-sbom.spdx.json"
+    - name: Scan SBOM
+      uses: anchore/scan-action@v3
+      with:
+        path: ./internal
+        format: spdx-json
+        output-file: "${{ github.event.repository.name }}-sbom.spdx.json"
