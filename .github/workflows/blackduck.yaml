@@ -52,7 +52,7 @@ jobs:
         blackducksca_policy_badges_create: true
         blackducksca_policy_badges_maxCount: 5
   
-              project_directory: ${{ vars.PROJECT_DIRECTORY }}
+        project_directory: ${{ vars.PROJECT_DIRECTORY }}
   
               ### Uncomment below configuration if Bridge diagnostic files needs to be uploaded
         # include_diagnostics: true
@@ -84,7 +84,7 @@ jobs:
         blackducksca_policy_badges_create: true
         blackducksca_policy_badges_maxCount: 5
   
-              project_directory: ${{ vars.PROJECT_DIRECTORY }}
+        project_directory: ${{ vars.PROJECT_DIRECTORY }}
   
               ### Uncomment below configuration if Bridge diagnostic files needs to be uploaded
         include_diagnostics: true
