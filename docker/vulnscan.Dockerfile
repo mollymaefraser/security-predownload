@@ -25,10 +25,14 @@ RUN cargo build --release
 
 FROM debian:bookworm-slim
 
-# This stage also features CVEs (2 critical, 2 high). However, the OS packages
-# here are only used to run the compiled vulnscan binary, which is statically 
-# linked and does not depend on any of these packages. The CVEs are therefore 
-# not exploitable in this image.
+# This stage also had CVEs (2 critical, 2 high) before the upgrade below.
+# Unlike the builder stage, this one does ship: vulnscan is dynamically
+# linked against libssl3/libcrypto3 (confirmed via ldd — native-tls links
+# system OpenSSL for the OSV.dev HTTPS calls), so these packages are live
+# code paths, not dead weight. Patched via apt-get upgrade; blast radius if
+# an unpatched CVE surfaces is bounded by the sandbox hardening in
+# internal/sandbox (non-root, read-only rootfs, dropped caps, network only
+# enabled for the SCA pass that actually needs it).
 RUN apt-get update && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends \
         ca-certificates libssl3 \
