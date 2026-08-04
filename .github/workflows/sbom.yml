@@ -1,4 +1,4 @@
-name: Go
+name: SBOM
 
 on:
   push:
@@ -19,8 +19,6 @@ jobs:
         format: spdx-json
         output-file: "${{ github.event.repository.name }}-sbom.spdx.json"
     - name: Scan SBOM
-      uses: anchore/scan-action@v3
+      uses: anchore/scan-action@v7
       with:
-        path: ./internal
-        format: spdx-json
-        output-file: "${{ github.event.repository.name }}-sbom.spdx.json"
+        sbom: "${{ github.event.repository.name }}-sbom.spdx.json"
