@@ -70,7 +70,7 @@ func Scan(ctx context.Context, archivePath string) (*Report, error) {
 	archiveDir := filepath.Dir(archivePath)
 	archiveName := filepath.Base(archivePath)
 
-	// The container runs as a fixed non-root user (internal/sandbox); it
+	// the container runs as a fixed non-root user (internal/sandbox); it
 	// needs read access to the archive dir and write access to the output
 	// dir regardless of which host user owns them.
 	if err := os.Chmod(archiveDir, 0o755); err != nil {

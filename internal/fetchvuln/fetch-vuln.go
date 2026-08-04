@@ -16,6 +16,7 @@ func CheckVulnerabilities(packageName string) (int, error) {
 	}
 	defer resp.Body.Close()
 
+	// decode the JSON response into a map
 	var result map[string]interface{}
 	err = json.NewDecoder(resp.Body).Decode(&result)
 	if err != nil {
@@ -28,6 +29,7 @@ func CheckVulnerabilities(packageName string) (int, error) {
 		return 0, nil
 	}
 
+	// type assert the vulns to a slice of interfaces
 	vulnList, ok := vulns.([]interface{})
 	if !ok {
 		return 0, nil

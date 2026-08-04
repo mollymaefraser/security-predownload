@@ -34,9 +34,11 @@ type RunOpts struct {
 
 // Available reports whether Docker is installed and its daemon is reachable.
 func Available(ctx context.Context) error {
+	// check that docker is in PATH and the daemon is reachable
 	if _, err := exec.LookPath("docker"); err != nil {
 		return fmt.Errorf("docker not found in PATH: %w", err)
 	}
+	// check that the docker daemon is reachable
 	if err := exec.CommandContext(ctx, "docker", "info").Run(); err != nil {
 		return fmt.Errorf("docker daemon not reachable: %w", err)
 	}
@@ -50,6 +52,7 @@ func EnsureImage(ctx context.Context, tag, dockerfilePath, buildContext string) 
 		return nil // already built
 	}
 
+	// build the image
 	build := exec.CommandContext(ctx, "docker", "build", "-t", tag, "-f", dockerfilePath, buildContext)
 	var out bytes.Buffer
 	build.Stdout = &out
