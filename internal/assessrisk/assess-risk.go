@@ -39,10 +39,8 @@ func AssessRisk(ctx context.Context, owner, packageName string, skipScan bool) {
 	score := 100
 	var reasons []string
 
-	// Deduct for low popularity (stars)
-	if data.StargazersCount < 100 {
-		deduction := 20
-		reasons = append(reasons, fmt.Sprintf("-%d: Low popularity (%d stars)", deduction, data.StargazersCount))
+	if deduction, reason := popularityDeduction(data.StargazersCount); deduction > 0 {
+		reasons = append(reasons, reason)
 		score -= deduction
 	}
 
@@ -71,6 +69,17 @@ func AssessRisk(ctx context.Context, owner, packageName string, skipScan bool) {
 	fmt.Printf("\n🔎 Final Risk Score for %s: **%d/100**\n", packageName, score)
 }
 
+// popularityDeduction scores a repo's star count. Returns a zero deduction
+// and empty reason when the repo clears the popularity bar.
+func popularityDeduction(stars int) (int, string) {
+	const threshold = 100
+	const deduction = 20
+	if stars >= threshold {
+		return 0, ""
+	}
+	return deduction, fmt.Sprintf("-%d: Low popularity (%d stars)", deduction, stars)
+}
+
 // runScan downloads the package source and runs the sandboxed vulnscan
 // scan, returning the score deduction and the reasons to display for it.
 // Failures here (no Docker, download error) degrade to a warning rather
@@ -90,6 +99,13 @@ func runScan(ctx context.Context, owner, packageName string) (int, []string) {
 		return 0, []string{fmt.Sprintf("⚠️ Sandboxed scan did not run (%v) — score reflects GitHub metadata only", err)}
 	}
 
+	return scoreForReport(report)
+}
+
+// scoreForReport turns a vulnscan report into a score deduction and the
+// human-readable reasons behind it. Pulled out of runScan so the scoring
+// math can be unit tested against fabricated reports without Docker.
+func scoreForReport(report *vulnscan.Report) (int, []string) {
 	var reasons []string
 	raw := 0
 

@@ -63,10 +63,10 @@ func EnsureImage(ctx context.Context, tag, dockerfilePath, buildContext string) 
 	return nil
 }
 
-// Run executes opts.Command inside a hardened, ephemeral container and
-// returns its combined stdout/stderr.
-func Run(ctx context.Context, opts RunOpts) ([]byte, error) {
-	// run the container with a read-only root filesystem, a tmpfs at /tmp,
+// buildRunArgs turns RunOpts into the `docker run` argument list, applying
+// the hardening flags unconditionally. Kept separate from Run so the
+// argument-construction logic can be unit tested without invoking Docker.
+func buildRunArgs(opts RunOpts) []string {
 	args := []string{
 		"run", "--rm",
 		"--read-only",
@@ -78,14 +78,12 @@ func Run(ctx context.Context, opts RunOpts) ([]byte, error) {
 		"--user", sandboxUser,
 	}
 
-	// configure network access
 	if opts.Network {
 		args = append(args, "--network", "bridge")
 	} else {
 		args = append(args, "--network", "none")
 	}
 
-	// mount any host directories requested by the caller
 	for _, m := range opts.Mounts {
 		spec := m.HostPath + ":" + m.ContainerPath
 		if m.ReadOnly {
@@ -97,7 +95,14 @@ func Run(ctx context.Context, opts RunOpts) ([]byte, error) {
 	args = append(args, opts.Image)
 	args = append(args, opts.Command...)
 
-	// run the container
+	return args
+}
+
+// Run executes opts.Command inside a hardened, ephemeral container and
+// returns its combined stdout/stderr.
+func Run(ctx context.Context, opts RunOpts) ([]byte, error) {
+	args := buildRunArgs(opts)
+
 	cmd := exec.CommandContext(ctx, "docker", args...)
 	var out bytes.Buffer
 	cmd.Stdout = &out

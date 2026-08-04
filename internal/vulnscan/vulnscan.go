@@ -101,10 +101,20 @@ func Scan(ctx context.Context, archivePath string) (*Report, error) {
 		return nil, fmt.Errorf("SCA pass: %w", err)
 	}
 
+	return mergeReports(sastReport, scaReport), nil
+}
+
+// mergeReports combines the SAST-pass report and the SCA-pass report into
+// one Report. Each pass is expected to only populate its own finding type
+// (the other is disabled via --no-sca/--no-sast), but mergeReports takes
+// findings from the pass that actually owns them rather than assuming that,
+// so a report with both types populated on one side doesn't silently
+// duplicate or drop findings.
+func mergeReports(sastReport, scaReport *Report) *Report {
 	return &Report{
 		ScaFindings:  scaReport.ScaFindings,
 		SastFindings: sastReport.SastFindings,
-	}, nil
+	}
 }
 
 func runPass(ctx context.Context, archiveDir, archiveName, outDir, outName, skipFlag string, network bool) (*Report, error) {

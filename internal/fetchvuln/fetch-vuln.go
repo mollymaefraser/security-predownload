@@ -1,16 +1,31 @@
 package fetchvuln
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
-	"strings"
 )
 
-const osvAPI = "https://api.osv.dev/v1/query"
+// osvAPI is overridden in tests to point at an httptest.Server.
+var osvAPI = "https://api.osv.dev/v1/query"
 
+type osvQuery struct {
+	Package osvPackage `json:"package"`
+}
+
+type osvPackage struct {
+	Name string `json:"name"`
+}
+
+// CheckVulnerabilities looks up known vulnerabilities for packageName
+// against the OSV.dev database and returns how many were found.
 func CheckVulnerabilities(packageName string) (int, error) {
-	data := `{"package": {"name": "` + packageName + `"}}`
-	resp, err := http.Post(osvAPI, "application/json", strings.NewReader(data))
+	body, err := json.Marshal(osvQuery{Package: osvPackage{Name: packageName}})
+	if err != nil {
+		return 0, err
+	}
+
+	resp, err := http.Post(osvAPI, "application/json", bytes.NewReader(body))
 	if err != nil {
 		return 0, err
 	}
@@ -18,8 +33,7 @@ func CheckVulnerabilities(packageName string) (int, error) {
 
 	// decode the JSON response into a map
 	var result map[string]interface{}
-	err = json.NewDecoder(resp.Body).Decode(&result)
-	if err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return 0, err
 	}
 

@@ -10,8 +10,11 @@ import (
 
 // maxArchiveBytes caps how much we'll write to disk for a single download,
 // so a malicious or oversized repo can't exhaust local storage before the
-// archive ever reaches the sandbox (this has been the cause of many incidents).
-const maxArchiveBytes = 200 * 1024 * 1024 // 200MB
+// archive ever reaches the sandbox. Var (not const) so tests can shrink it.
+var maxArchiveBytes int64 = 200 * 1024 * 1024 // 200MB
+
+// apiBaseURL is overridden in tests to point at an httptest.Server.
+var apiBaseURL = "https://api.github.com"
 
 // Download fetches a GitHub repository's default-branch source as a tarball
 // into a fresh temp directory. It returns the archive path and a cleanup
@@ -28,7 +31,7 @@ func Download(owner, repo string) (path string, cleanup func(), err error) {
 	cleanup = func() { os.RemoveAll(dir) }
 
 	// download the tarball from GitHub
-	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/tarball", owner, repo)
+	url := fmt.Sprintf("%s/repos/%s/%s/tarball", apiBaseURL, owner, repo)
 	resp, err := http.Get(url)
 	if err != nil {
 		cleanup()
