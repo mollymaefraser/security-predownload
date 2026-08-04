@@ -51,6 +51,26 @@ func TestDownload_Success(t *testing.T) {
 	}
 }
 
+func TestDownload_SendsBearerTokenWhenSet(t *testing.T) {
+	t.Setenv("GITHUB_TOKEN", "test-token-123")
+
+	var gotAuth string
+	withTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		gotAuth = r.Header.Get("Authorization")
+		w.Write([]byte("fake tarball contents"))
+	})
+
+	_, cleanup, err := Download("owner", "repo")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	defer cleanup()
+
+	if gotAuth != "Bearer test-token-123" {
+		t.Errorf("got Authorization header %q, want %q", gotAuth, "Bearer test-token-123")
+	}
+}
+
 func TestDownload_NonOKStatusCleansUpAndErrors(t *testing.T) {
 	// a non-200 response should result in an error and the cleanup function should remove any partially downloaded file.
 	withTestServer(t, func(w http.ResponseWriter, r *http.Request) {

@@ -51,6 +51,45 @@ func TestGetGitHubRepoData_NotFound(t *testing.T) {
 	}
 }
 
+func TestGetGitHubRepoData_SendsBearerTokenWhenSet(t *testing.T) {
+	t.Setenv("GITHUB_TOKEN", "test-token-123")
+
+	var gotAuth string
+	withTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		gotAuth = r.Header.Get("Authorization")
+		w.Write([]byte(`{"stargazers_count": 1}`))
+	})
+
+	if _, err := GetGitHubRepoData("owner", "repo"); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if gotAuth != "Bearer test-token-123" {
+		t.Errorf("got Authorization header %q, want %q", gotAuth, "Bearer test-token-123")
+	}
+}
+
+func TestGetGitHubRepoData_NoAuthHeaderWithoutToken(t *testing.T) {
+	t.Setenv("GITHUB_TOKEN", "")
+
+	var gotAuth string
+	sawRequest := false
+	withTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		sawRequest = true
+		gotAuth = r.Header.Get("Authorization")
+		w.Write([]byte(`{"stargazers_count": 1}`))
+	})
+
+	if _, err := GetGitHubRepoData("owner", "repo"); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !sawRequest {
+		t.Fatal("request never reached the test server")
+	}
+	if gotAuth != "" {
+		t.Errorf("expected no Authorization header, got %q", gotAuth)
+	}
+}
+
 func TestGetGitHubRepoData_MalformedJSON(t *testing.T) {
 	// a malformed JSON response should result in an error.
 	withTestServer(t, func(w http.ResponseWriter, r *http.Request) {

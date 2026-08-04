@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+
+	"risk-check/internal/githubauth"
 )
 
 // maxArchiveBytes caps how much we'll write to disk for a single download,
@@ -20,6 +22,7 @@ var apiBaseURL = "https://api.github.com"
 // into a fresh temp directory. It returns the archive path and a cleanup
 // function that removes the temp directory; callers should defer cleanup().
 // If the download fails, cleanup is called before returning, to keep things safe.
+// Set GITHUB_TOKEN to raise the rate limit from 60 to 5,000 requests/hour.
 func Download(owner, repo string) (path string, cleanup func(), err error) {
 	// Make temp dir
 	dir, err := os.MkdirTemp("", "security-predownload-*")
@@ -32,7 +35,14 @@ func Download(owner, repo string) (path string, cleanup func(), err error) {
 
 	// download the tarball from GitHub
 	url := fmt.Sprintf("%s/repos/%s/%s/tarball", apiBaseURL, owner, repo)
-	resp, err := http.Get(url)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		cleanup()
+		return "", nil, fmt.Errorf("building request for %s: %w", url, err)
+	}
+	githubauth.SetAuthHeader(req)
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		cleanup()
 		return "", nil, fmt.Errorf("downloading %s: %w", url, err)
