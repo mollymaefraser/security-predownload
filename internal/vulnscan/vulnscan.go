@@ -73,7 +73,7 @@ func Scan(ctx context.Context, archivePath string) (*Report, error) {
 	// the container runs as a fixed non-root user (internal/sandbox); it
 	// needs read access to the archive dir and write access to the output
 	// dir regardless of which host user owns them.
-	if err := os.Chmod(archiveDir, 0o755); err != nil {
+	if err := os.Chmod(archiveDir, 0o755); err != nil { // 755 means directory is writable not executable
 		return nil, fmt.Errorf("preparing archive dir permissions: %w", err)
 	}
 

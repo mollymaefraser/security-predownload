@@ -1,6 +1,7 @@
 package fetchmeta
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -27,7 +28,7 @@ func TestGetGitHubRepoData_Success(t *testing.T) {
 	})
 
 	// call GetGitHubRepoData and check that it returns the expected data.
-	data, err := GetGitHubRepoData("owner", "repo")
+	data, err := GetGitHubRepoData(context.Background(), "owner", "repo")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -46,7 +47,7 @@ func TestGetGitHubRepoData_NotFound(t *testing.T) {
 	// A 404 body still unmarshals cleanly into GitHubRepo (zero-value
 	// fields), so without a status check this would silently look like a
 	// 0-star repo instead of erroring.
-	if _, err := GetGitHubRepoData("owner", "does-not-exist"); err == nil {
+	if _, err := GetGitHubRepoData(context.Background(), "owner", "does-not-exist"); err == nil {
 		t.Error("expected an error for a 404 response, got nil")
 	}
 }
@@ -60,7 +61,7 @@ func TestGetGitHubRepoData_SendsBearerTokenWhenSet(t *testing.T) {
 		w.Write([]byte(`{"stargazers_count": 1}`))
 	})
 
-	if _, err := GetGitHubRepoData("owner", "repo"); err != nil {
+	if _, err := GetGitHubRepoData(context.Background(), "owner", "repo"); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if gotAuth != "Bearer test-token-123" {
@@ -79,7 +80,7 @@ func TestGetGitHubRepoData_NoAuthHeaderWithoutToken(t *testing.T) {
 		w.Write([]byte(`{"stargazers_count": 1}`))
 	})
 
-	if _, err := GetGitHubRepoData("owner", "repo"); err != nil {
+	if _, err := GetGitHubRepoData(context.Background(), "owner", "repo"); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if !sawRequest {
@@ -99,7 +100,7 @@ func TestGetGitHubRepoData_MalformedJSON(t *testing.T) {
 	// a malformed JSON body still unmarshals cleanly into GitHubRepo (zero-value
 	// fields), so without a status check this would silently look like a
 	// 0-star repo instead of erroring.
-	if _, err := GetGitHubRepoData("owner", "repo"); err == nil {
+	if _, err := GetGitHubRepoData(context.Background(), "owner", "repo"); err == nil {
 		t.Error("expected an error for malformed JSON, got nil")
 	}
 }

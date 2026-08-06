@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strconv"
+	"strings"
 	"testing"
 )
 
@@ -85,6 +87,61 @@ func TestDownload_NonOKStatusCleansUpAndErrors(t *testing.T) {
 	}
 	if cleanup != nil {
 		t.Error("expected a nil cleanup func on the error path")
+	}
+}
+
+func TestDownload_ContentLengthExceedsLimit(t *testing.T) {
+	// an oversized Content-Length header should be rejected before any
+	// body bytes are written to disk.
+	original := maxArchiveBytes
+	maxArchiveBytes = 10
+	t.Cleanup(func() { maxArchiveBytes = original })
+
+	withTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Length", strconv.Itoa(100))
+		w.Write(make([]byte, 100))
+	})
+
+	_, cleanup, err := Download("owner", "huge-repo")
+	if err == nil {
+		cleanup()
+		t.Fatal("expected an error for an oversized archive, got nil")
+	}
+	if cleanup != nil {
+		t.Error("expected a nil cleanup func on the error path")
+	}
+	if !strings.Contains(err.Error(), "archive size") {
+		t.Errorf("expected the Content-Length fast path to reject this, got: %v", err)
+	}
+}
+
+func TestDownload_ExceedsSizeLimit_ChunkedNoContentLength(t *testing.T) {
+	// without a Content-Length header (e.g. chunked transfer), oversized
+	// bodies must still be caught while streaming to disk.
+	original := maxArchiveBytes
+	maxArchiveBytes = 10
+	t.Cleanup(func() { maxArchiveBytes = original })
+
+	withTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		flusher, ok := w.(http.Flusher)
+		if !ok {
+			t.Fatal("test server ResponseWriter does not support Flush")
+		}
+		w.Write(make([]byte, 1)) // force headers to flush without a Content-Length
+		flusher.Flush()
+		w.Write(make([]byte, 99))
+	})
+
+	_, cleanup, err := Download("owner", "huge-repo")
+	if err == nil {
+		cleanup()
+		t.Fatal("expected an error for an oversized archive, got nil")
+	}
+	if cleanup != nil {
+		t.Error("expected a nil cleanup func on the error path")
+	}
+	if !strings.Contains(err.Error(), "archive exceeds") {
+		t.Errorf("expected the streaming LimitReader fallback to reject this, got: %v", err)
 	}
 }
 

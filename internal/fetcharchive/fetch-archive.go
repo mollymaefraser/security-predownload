@@ -54,6 +54,14 @@ func Download(owner, repo string) (path string, cleanup func(), err error) {
 		return "", nil, fmt.Errorf("downloading %s: unexpected status %s", url, resp.Status)
 	}
 
+	// Bail out before writing anything to disk if the server told us the
+	// size up front. Not authoritative (absent on chunked responses, and a
+	// server could lie), so the LimitReader below still enforces the real cap.
+	if resp.ContentLength > maxArchiveBytes {
+		cleanup()
+		return "", nil, fmt.Errorf("archive size %d exceeds %d byte limit", resp.ContentLength, maxArchiveBytes)
+	}
+
 	archivePath := filepath.Join(dir, "archive.tar.gz")
 	// create archive file
 	f, err := os.Create(archivePath)
@@ -65,7 +73,7 @@ func Download(owner, repo string) (path string, cleanup func(), err error) {
 
 	// limit the number of bytes we write to disk, so a malicious or oversized
 	// repo can't exhaust local storage before the archive ever reaches the sandbox.
-	limited := io.LimitReader(resp.Body, maxArchiveBytes+1)
+	limited := io.LimitReader(resp.Body, maxArchiveBytes+1) // check in advance of size
 	n, err := io.Copy(f, limited)
 	if err != nil {
 		cleanup()

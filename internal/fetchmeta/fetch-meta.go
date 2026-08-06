@@ -1,6 +1,7 @@
 package fetchmeta
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -15,10 +16,10 @@ var apiBaseURL = "https://api.github.com"
 
 // GetGitHubRepoData fetches repository data from GitHub. Set GITHUB_TOKEN
 // to raise the rate limit from 60 to 5,000 requests/hour.
-func GetGitHubRepoData(owner, repo string) (*types.GitHubRepo, error) {
+func GetGitHubRepoData(ctx context.Context, owner, repo string) (*types.GitHubRepo, error) {
 	url := fmt.Sprintf("%s/repos/%s/%s", apiBaseURL, owner, repo)
 
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}

@@ -29,7 +29,7 @@ func AssessRisk(ctx context.Context, owner, packageName string, skipScan bool) {
 	fmt.Printf("Assessing risk for package: %s\n\n", packageName)
 
 	// get the github metadata for the repo
-	data, err := fetchmeta.GetGitHubRepoData(owner, packageName)
+	data, err := fetchmeta.GetGitHubRepoData(ctx, owner, packageName)
 	if err != nil {
 		fmt.Println("⚠️ Error searching GitHub:", err)
 		return
